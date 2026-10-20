@@ -3,6 +3,7 @@ import { lstatSync, readFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { exists, isDir, list, usage } from "../fsutil.js";
 import type { Item, ScanOptions } from "../types.js";
+import { t } from "../i18n.js";
 
 function git(cwd: string, args: string[]): string | undefined {
   try {
@@ -79,8 +80,8 @@ export function scanWorktrees(o: ScanOptions): Item[] {
           id: `worktree:orphan:${wt}`,
           category: "worktree",
           tool: "git",
-          title: `orphaned worktree ${basename(wt)}`,
-          detail: `${wt} (its repository is gone)`,
+          title: t.orphanedWorktree(basename(wt)),
+          detail: t.orphanedWorktreeDetail(wt),
           bytes: u.bytes,
           mtime: u.mtime,
           action: { kind: "rm", paths: [wt] },
@@ -96,8 +97,8 @@ export function scanWorktrees(o: ScanOptions): Item[] {
         id: `worktree:stale:${wt}`,
         category: "worktree",
         tool: "git",
-        title: `stale worktree ${basename(wt)}`,
-        detail: `${wt}, clean, idle > ${o.days}d (branch is kept)`,
+        title: t.staleWorktree(basename(wt)),
+        detail: t.staleWorktreeDetail(wt, o.days),
         bytes: u.bytes,
         mtime: u.mtime,
         action: { kind: "git-worktree-remove", repo, path: wt },
@@ -115,8 +116,8 @@ export function scanWorktrees(o: ScanOptions): Item[] {
         id: `worktree:prune:${top}`,
         category: "worktree",
         tool: "git",
-        title: `${prunable} dangling worktree record(s) in ${basename(top)}`,
-        detail: `git worktree prune in ${top}`,
+        title: t.danglingRecords(prunable, basename(top)),
+        detail: t.pruneIn(top),
         bytes: 0,
         mtime: 0,
         action: { kind: "git-worktree-prune", repo: top },

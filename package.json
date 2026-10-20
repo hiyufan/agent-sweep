@@ -1,6 +1,6 @@
 {
   "name": "agent-sweeper",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "npkill for AI coding agents: reclaim disk and RAM from stale Claude Code, Codex, Gemini CLI and Cursor sessions, orphaned git worktrees and zombie MCP servers.",
   "keywords": [
     "claude-code",

@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { rmSync } from "node:fs";
 import { relative, resolve, isAbsolute } from "node:path";
 import type { Action, Item } from "./types.js";
+import { t } from "./i18n.js";
 
 export interface RunOptions {
   /** Without this, nothing is touched and the result only says what would happen. */
@@ -25,13 +26,13 @@ export function inside(root: string, path: string): boolean {
 export function describe(a: Action): string {
   switch (a.kind) {
     case "rm":
-      return a.paths.length === 1 ? `delete ${a.paths[0]}` : `delete ${a.paths.length} entries`;
+      return a.paths.length === 1 ? t.deleteOne(a.paths[0]) : t.deleteMany(a.paths.length);
     case "git-worktree-remove":
       return `git -C ${a.repo} worktree remove ${a.path}`;
     case "git-worktree-prune":
       return `git -C ${a.repo} worktree prune`;
     case "kill":
-      return `kill ${a.pid}`;
+      return t.kill(a.pid);
   }
 }
 
@@ -54,9 +55,9 @@ export async function run(item: Item, o: RunOptions): Promise<Result> {
   const a = item.action;
   if (a.kind === "rm") {
     const bad = a.paths.find((p) => !o.roots.some((r) => inside(r, p)));
-    if (bad) return { item, ok: false, message: `refused: ${bad} is outside the agent folders` };
+    if (bad) return { item, ok: false, message: t.refused(bad) };
   }
-  if (!o.apply) return { item, ok: true, message: `[dry-run] would ${describe(a)}` };
+  if (!o.apply) return { item, ok: true, message: t.wouldDo(describe(a)) };
   try {
     switch (a.kind) {
       case "rm":
@@ -74,6 +75,6 @@ export async function run(item: Item, o: RunOptions): Promise<Result> {
     }
     return { item, ok: true, message: describe(a) };
   } catch (e) {
-    return { item, ok: false, message: `${describe(a)} failed: ${(e as Error).message.split("\n")[0]}` };
+    return { item, ok: false, message: t.failed(describe(a), (e as Error).message.split("\n")[0]) };
   }
 }

@@ -25,7 +25,7 @@ npx agent-sweeper
 ```
 
 <p align="center">
-  <img src="assets/demo.svg" alt="agent-sweep 演示：扫描、勾选、dry-run 清理 4.5 GB" width="100%">
+  <img src="assets/demo.zh-CN.svg" alt="agent-sweep 演示：扫描、勾选、dry-run 清理 4.5 GB" width="100%">
 </p>
 
 <sub>演示用的是一个示例 home 目录，由 [`scripts/record-demo.py`](scripts/record-demo.py) 从真实 CLI 录制。</sub>
@@ -54,6 +54,8 @@ npx agent-sweeper
 | 💬 **opencode** | `~/.local/share/opencode/log` | 闲置超过 `--days` |
 | 🖥️ **Cursor、Windsurf、VS Code** | `workspaceStorage` | 对应的工作区文件夹已不存在 |
 | 📦 **npx 缓存** | `~/.npm/_npx` | 超过 `--days` 没用过（需要时 npx 会重新下载） |
+
+**界面自带中文**：系统语言是中文时自动显示中文，也可以用 `--lang zh` 或环境变量 `AGENT_SWEEP_LANG=zh` 指定。
 
 支持 `CLAUDE_CONFIG_DIR`、`CODEX_HOME`、`XDG_*`、`APPDATA`、`npm_config_cache` 等环境变量。支持 macOS、Linux 和 Windows（进程扫描仅支持 macOS 和 Linux）。
 
@@ -96,6 +98,7 @@ npx agent-sweeper --json | jq      # 输出 JSON
 | `--apply` | 关 | 真正删除和结束进程（仍需确认） |
 | `--list` | | 打印结果后退出，不会删除 |
 | `--json` | | 以 JSON 输出后退出，不会删除 |
+| `--lang <en\|zh>` | 跟随系统 | 界面语言 |
 
 ## 常见问题
 

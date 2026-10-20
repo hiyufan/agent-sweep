@@ -2,6 +2,7 @@ import { emitKeypressEvents } from "node:readline";
 import { run, type RunOptions } from "./actions.js";
 import { formatAge, formatBytes } from "./fsutil.js";
 import type { Item } from "./types.js";
+import { clip, fit, t } from "./i18n.js";
 
 const ESC = "\x1b[";
 // Reverse video stays on under NO_COLOR: without it you cannot see the cursor.
@@ -36,13 +37,9 @@ function sortItems(items: Item[], key: SortKey): Item[] {
   return [...items].sort(by[key]);
 }
 
-const TAG: Record<Item["category"], string> = { cache: "cache", worktree: "worktree", process: "process" };
 
 type Status = { ok: boolean; message: string };
 
-function pad(s: string, n: number): string {
-  return s.length >= n ? s.slice(0, n) : s + " ".repeat(n - s.length);
-}
 
 export async function interactive(input: Item[], o: RunOptions & { now: number }): Promise<Summary> {
   const out = process.stdout;
@@ -68,19 +65,22 @@ export async function interactive(input: Item[], o: RunOptions & { now: number }
     if (cursor >= top + listHeight) top = cursor - listHeight + 1;
 
     const selBytes = [...selected].reduce((n, it) => n + (it.category === "process" ? 0 : it.bytes), 0);
-    const mode = o.apply ? c.red(" APPLY ") : c.yellow(" DRY-RUN ");
+    const mode = o.apply ? c.red(t.modeApply()) : c.yellow(t.modeDry());
+    const [hItems, hTotal, hSel] = t.header(items.length, formatBytes(total), selected.size, formatBytes(selBytes));
+    const [cSize, cAge, cKind, cWhat] = t.columns();
     let s = `${ESC}H${ESC}2J`;
-    s += `${c.bold("agent-sweep")} ${mode} ${items.length} items · ${c.green(formatBytes(total))} reclaimable · ${selected.size} selected (${formatBytes(selBytes)})\n`;
-    s += c.dim(o.apply ? "Selected items will really be deleted after you confirm.\n" : "Nothing will be deleted. Re-run with --apply to clean for real.\n");
-    s += c.dim(`${pad("", 4)}${pad("SIZE", 9)}${pad("AGE", 6)}${pad("KIND", 10)}WHAT`.padEnd(Math.min(cols, 80) - 12) + `sort: ${sortKey}`) + "\n";
+    s += `${c.bold("agent-sweep")} ${mode} ${hItems} · ${c.green(hTotal)} · ${hSel}\n`;
+    s += c.dim((o.apply ? t.applyHint() : t.dryHint()) + "\n");
+    const heading = `${fit("", 4)}${fit(cSize, 9)}${fit(cAge, 6)}${fit(cKind, 10)}${cWhat}`;
+    s += c.dim(fit(heading, Math.min(cols, 80) - 14) + t.sortLabel(t.sortName(sortKey))) + "\n";
 
     for (let i = top; i < Math.min(items.length, top + listHeight); i++) {
       const it = items[i];
       const st = done.get(it);
       const box = st ? (st.ok ? (o.apply ? c.green(" ✓ ") : c.yellow(" ~ ")) : c.red(" ✗ ")) : selected.has(it) ? c.cyan("[x]") : "[ ]";
       const size = it.category === "process" ? `${formatBytes(it.bytes)}*` : formatBytes(it.bytes);
-      let line = `${pad(size, 9)}${pad(formatAge(it.mtime, o.now), 6)}${pad(TAG[it.category], 10)}${it.tool}: ${it.title}`;
-      line = pad(line, Math.max(10, cols - 5));
+      let line = `${fit(size, 9)}${fit(formatAge(it.mtime, o.now), 6)}${fit(t.kind(it.category), 10)}${it.tool}: ${it.title}`;
+      line = fit(line, Math.max(10, cols - 5));
       s += `${box} ${i === cursor ? c.inv(line) : st ? c.dim(line) : line}\n`;
     }
     for (let i = Math.min(items.length, top + listHeight); i < top + listHeight; i++) s += "\n";
@@ -88,12 +88,12 @@ export async function interactive(input: Item[], o: RunOptions & { now: number }
     const cur = items[cursor];
     const st = cur && done.get(cur);
     s += c.dim("─".repeat(Math.min(cols, 80))) + "\n";
-    s += cur ? `${cur.detail.length >= cols ? cur.detail.slice(0, cols - 2) + "…" : cur.detail}\n${st ? (st.ok ? c.green(st.message) : c.red(st.message)) : ""}\n` : "\n\n";
+    const msg = st ? clip(st.message, cols - 1) : "";
+    s += cur ? `${clip(cur.detail, cols - 1)}\n${st ? (st.ok ? c.green(msg) : c.red(msg)) : ""}\n` : "\n\n";
     if (confirming) {
-      const verb = o.apply ? c.red("Really clean") : "Simulate cleaning";
-      s += c.bold(`${verb} ${selected.size} item(s)? [y/N] `);
+      s += o.apply ? c.bold(c.red(t.confirmApply(selected.size))) : c.bold(t.confirmDry(selected.size));
     } else {
-      s += note || c.dim("↑/↓ move  space select  a all  s sort  enter clean  q quit   (* = memory)");
+      s += note || c.dim(t.keys());
     }
     out.write(s);
   };
@@ -124,7 +124,7 @@ export async function interactive(input: Item[], o: RunOptions & { now: number }
       const picks = items.filter((it) => selected.has(it));
       let freed = 0;
       for (const it of picks) {
-        note = c.dim(`working on ${it.title}...`);
+        note = c.dim(t.working(it.title));
         render();
         const r = await run(it, o);
         done.set(it, r);
@@ -134,7 +134,7 @@ export async function interactive(input: Item[], o: RunOptions & { now: number }
         if (r.ok && it.category !== "process") freed += it.bytes;
       }
       summary.bytes += freed;
-      note = o.apply ? c.green(`Freed ${formatBytes(freed)}.`) : c.yellow(`Dry-run: would free ${formatBytes(freed)}. Re-run with --apply to do it.`);
+      note = o.apply ? c.green(t.freed(formatBytes(freed))) : c.yellow(t.wouldFree(formatBytes(freed)));
       busy = false;
       render();
     };
@@ -146,7 +146,7 @@ export async function interactive(input: Item[], o: RunOptions & { now: number }
         confirming = false;
         if (str === "y" || str === "Y") void execute();
         else {
-          note = c.dim("Cancelled.");
+          note = c.dim(t.cancelled());
           render();
         }
         return;
@@ -192,7 +192,7 @@ export async function interactive(input: Item[], o: RunOptions & { now: number }
         case "return":
         case "enter":
         case "d":
-          if (selected.size === 0) note = c.dim("Select something with space first.");
+          if (selected.size === 0) note = c.dim(t.selectFirst());
           else confirming = true;
           break;
       }

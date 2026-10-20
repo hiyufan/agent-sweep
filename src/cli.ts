@@ -8,27 +8,9 @@ import { scanWorktrees, worktreeRoots } from "./scanners/worktrees.js";
 import { describe } from "./actions.js";
 import { formatAge, formatBytes } from "./fsutil.js";
 import { interactive } from "./tui.js";
+import { setLang, t } from "./i18n.js";
 import type { Category, Item, ScanOptions } from "./types.js";
 
-const HELP = `agent-sweep: clean up after your AI coding agents
-
-Usage: npx agent-sweeper [options]
-
-Finds stale Claude Code / Codex / Gemini CLI / opencode sessions and caches,
-Cursor / Windsurf / VS Code storage for deleted projects, forgotten npx
-installs, orphaned git worktrees, and MCP server processes whose agent is
-gone. Opens an interactive list; nothing is deleted without --apply and a
-confirmation.
-
-Options:
-  --days <n>       Treat things idle for n days as stale (default 14)
-  --only <kinds>   Comma list of: cache, worktree, process
-  --apply          Actually delete / kill (still asks to confirm)
-  --list           Print the findings and exit (never deletes)
-  --json           Print the findings as JSON and exit (never deletes)
-  -h, --help       Show this help
-  -v, --version    Show version
-`;
 
 interface Args {
   days: number;
@@ -40,6 +22,9 @@ interface Args {
 
 export function parseArgs(argv: string[]): Args {
   const a: Args = { days: 14, only: new Set(["cache", "worktree", "process"]), apply: false, list: false, json: false };
+  // Settle the language first so --help and errors come out in it whatever the order.
+  const li = argv.indexOf("--lang");
+  if (li >= 0 && (argv[li + 1] === "en" || argv[li + 1] === "zh")) setLang(argv[li + 1] as "en" | "zh");
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     const val = () => {
@@ -69,9 +54,15 @@ export function parseArgs(argv: string[]): Args {
       case "--json":
         a.json = true;
         break;
+      case "--lang": {
+        const l = val();
+        if (l !== "en" && l !== "zh") throw new Error("--lang must be en or zh");
+        setLang(l);
+        break;
+      }
       case "-h":
       case "--help":
-        process.stdout.write(HELP);
+        process.stdout.write(t.help());
         process.exit(0);
       case "-v":
       case "--version": {
@@ -101,7 +92,7 @@ export function allowedRoots(o: ScanOptions): string[] {
 
 function printList(items: Item[], now: number) {
   if (items.length === 0) {
-    console.log("Nothing to sweep. Your agents are tidy.");
+    console.log(t.tidy());
     return;
   }
   const total = items.reduce((n, it) => n + (it.category === "process" ? 0 : it.bytes), 0);
@@ -110,7 +101,7 @@ function printList(items: Item[], now: number) {
     console.log(`${size.padEnd(9)}${formatAge(it.mtime, now).padEnd(6)}${it.category.padEnd(10)}${it.tool}: ${it.title}`);
     console.log(`${" ".repeat(25)}${describe(it.action)}`);
   }
-  console.log(`\n${items.length} items, ${formatBytes(total)} reclaimable on disk (* = process memory).`);
+  console.log(t.listTotal(items.length, formatBytes(total)));
 }
 
 async function main() {
@@ -118,7 +109,7 @@ async function main() {
   try {
     args = parseArgs(process.argv.slice(2));
   } catch (e) {
-    process.stderr.write(`agent-sweep: ${(e as Error).message}\n\n${HELP}`);
+    process.stderr.write(`agent-sweep: ${(e as Error).message}\n\n${t.help()}`);
     process.exit(2);
   }
   const o: ScanOptions = {
@@ -130,7 +121,7 @@ async function main() {
     platform: process.platform,
   };
   const interactiveMode = !args.list && !args.json && process.stdin.isTTY && process.stdout.isTTY;
-  if (interactiveMode) process.stderr.write("Scanning...\n");
+  if (interactiveMode) process.stderr.write(t.scanning() + "\n");
   const items = scanAll(o, args.only);
 
   if (args.json) {
@@ -142,17 +133,12 @@ async function main() {
     return;
   }
   if (items.length === 0) {
-    console.log("Nothing to sweep. Your agents are tidy.");
+    console.log(t.tidy());
     return;
   }
   const sum = await interactive(items, { apply: args.apply, roots: allowedRoots(o), now: o.now });
   if (sum.done + sum.failed === 0) return;
-  const failed = sum.failed ? `, ${sum.failed} failed` : "";
-  console.log(
-    args.apply
-      ? `agent-sweep cleaned ${sum.done} item(s) and freed ${formatBytes(sum.bytes)}${failed}.`
-      : `Dry-run: ${sum.done} item(s), ${formatBytes(sum.bytes)} would be freed${failed}. Run again with --apply to clean for real.`,
-  );
+  console.log((args.apply ? t.summaryApply : t.summaryDry)(sum.done, formatBytes(sum.bytes), sum.failed));
 }
 
 main().catch((e) => {

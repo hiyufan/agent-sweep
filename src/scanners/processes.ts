@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import type { Item, ScanOptions } from "../types.js";
+import { t } from "../i18n.js";
 
 export interface Proc {
   pid: number;
@@ -88,7 +89,7 @@ export function scanProcesses(o: ScanOptions): Item[] {
     id: `process:${p.pid}`,
     category: "process" as const,
     tool: "mcp",
-    title: `orphaned ${mcpName(p.args)} (pid ${p.pid})`,
+    title: t.orphanedProcess(mcpName(p.args), p.pid),
     detail: p.args.length > 120 ? p.args.slice(0, 117) + "..." : p.args,
     bytes: p.rssKb * 1024,
     mtime: o.now - p.elapsedSec * 1000,

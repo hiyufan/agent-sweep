@@ -26,6 +26,7 @@ KEYS = [  # (key, pause after, keep frame on screen for seconds)
 ]
 
 out_path = sys.argv[1]
+title = sys.argv[2] if len(sys.argv) > 2 else "npx agent-sweeper"
 cli = os.path.join(os.path.dirname(__file__), "..", "dist", "cli.js")
 pid, fd = pty.fork()
 if pid == 0:
@@ -68,8 +69,13 @@ def row_svg(cells, y):
         c = cells[x]
         x2 = x
         key = (c.fg, c.bold, c.reverse, c.italics)
-        while x2 < COLS and (cells[x2].fg, cells[x2].bold, cells[x2].reverse, cells[x2].italics) == key:
+        # Wide (CJK) characters get their own element so they sit on the terminal grid whatever the font.
+        wide = lambda i: ord(cells[i].data[:1] or " ") > 0x2e7f
+        while x2 < COLS and (cells[x2].fg, cells[x2].bold, cells[x2].reverse, cells[x2].italics) == key and wide(x2) == wide(x):
             x2 += 1
+            if wide(x):
+                x2 += 1  # skip the empty cell pyte leaves after a wide character
+                break
         text = "".join(cells[i].data for i in range(x, x2))
         fg = PALETTE.get(c.fg, PALETTE["default"])
         px = PAD + x * CW
@@ -96,7 +102,7 @@ svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewB
 <style>{"".join(css)}</style>
 <rect width="{W}" height="{H}" rx="10" fill="#1e1f29"/>
 <circle cx="22" cy="20" r="6" fill="#ff5f57"/><circle cx="42" cy="20" r="6" fill="#febc2e"/><circle cx="62" cy="20" r="6" fill="#28c840"/>
-<text x="{W / 2}" y="25" fill="#8b8d98" text-anchor="middle" font-size="13">npx agent-sweeper</text>
+<text x="{W / 2}" y="25" fill="#8b8d98" text-anchor="middle" font-size="13">{escape(title)}</text>
 {"".join(groups)}
 </svg>'''
 os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)

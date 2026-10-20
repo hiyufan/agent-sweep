@@ -1,6 +1,7 @@
 import { basename, join } from "node:path";
 import { exists, head, isDir, list, usage } from "../fsutil.js";
 import type { Item, ScanOptions } from "../types.js";
+import { t } from "../i18n.js";
 
 interface Group {
   paths: string[];
@@ -78,49 +79,40 @@ function scanClaude(o: ScanOptions, cutoff: number, items: Item[]) {
     if (cwd && !exists(cwd)) {
       const u = usage(proj);
       if (u.mtime >= o.now - 3_600_000) continue;
-      push(items, "claude", `orphaned project ${name}`, { paths: [proj], ...u }, "project folder no longer exists; all its sessions");
+      push(items, "claude", t.orphanedProject(name), { paths: [proj], ...u }, t.orphanedProjectDetail());
       continue;
     }
     // Session transcripts (<id>.jsonl) and their sidecar folders (<id>/) go together.
     // Leave Claude's per-project memory alone.
     const g = staleChildren(proj, cutoff, (p) => basename(p) !== "memory");
     const sessions = g.paths.filter((p) => p.endsWith(".jsonl")).length;
-    push(items, "claude", `stale sessions in ${name}`, g, `${sessions} session(s) idle > ${o.days}d`);
+    push(items, "claude", t.staleSessions(name), g, t.staleSessionsDetail(sessions, o.days));
   }
 
-  const dirs: [string, string][] = [
-    ["debug", "debug logs"],
-    ["file-history", "file edit history"],
-    ["shell-snapshots", "shell snapshots"],
-    ["todos", "todo lists"],
-    ["paste-cache", "paste cache"],
-    ["session-env", "session env"],
-    ["telemetry", "telemetry"],
-    ["statsig", "statsig cache"],
-  ];
-  for (const [dir, label] of dirs) {
-    push(items, "claude", label, staleChildren(join(root, dir), cutoff), `~/.claude/${dir}, idle > ${o.days}d`);
+  const dirs = ["debug", "file-history", "shell-snapshots", "todos", "paste-cache", "session-env", "telemetry", "statsig"];
+  for (const dir of dirs) {
+    push(items, "claude", t.claudeDir(dir), staleChildren(join(root, dir), cutoff), t.idleIn(`~/.claude/${dir}`, o.days));
   }
 }
 
 function scanCodex(o: ScanOptions, cutoff: number, items: Item[]) {
   const root = o.env.CODEX_HOME || join(o.home, ".codex");
   if (!isDir(root)) return;
-  push(items, "codex", "session rollouts", staleLeaves(join(root, "sessions"), 2, cutoff), `~/.codex/sessions, idle > ${o.days}d`);
-  push(items, "codex", "archived sessions", staleChildren(join(root, "archived_sessions"), cutoff), `idle > ${o.days}d`);
-  push(items, "codex", "logs", staleChildren(join(root, "log"), cutoff), `~/.codex/log, idle > ${o.days}d`);
+  push(items, "codex", t.sessionRollouts(), staleLeaves(join(root, "sessions"), 2, cutoff), t.idleIn("~/.codex/sessions", o.days));
+  push(items, "codex", t.archivedSessions(), staleChildren(join(root, "archived_sessions"), cutoff), t.idle(o.days));
+  push(items, "codex", t.logs(), staleChildren(join(root, "log"), cutoff), t.idleIn("~/.codex/log", o.days));
 }
 
 function scanGemini(o: ScanOptions, cutoff: number, items: Item[]) {
   const root = join(o.home, ".gemini");
   if (!isDir(root)) return;
-  push(items, "gemini", "project temp & chats", staleChildren(join(root, "tmp"), cutoff), `~/.gemini/tmp, idle > ${o.days}d`);
+  push(items, "gemini", t.geminiTmp(), staleChildren(join(root, "tmp"), cutoff), t.idleIn("~/.gemini/tmp", o.days));
 }
 
 function scanOpencode(o: ScanOptions, cutoff: number, items: Item[]) {
   const root = join(o.env.XDG_DATA_HOME || join(o.home, ".local", "share"), "opencode");
   if (!isDir(root)) return;
-  push(items, "opencode", "logs", staleChildren(join(root, "log"), cutoff), `opencode/log, idle > ${o.days}d`);
+  push(items, "opencode", t.logs(), staleChildren(join(root, "log"), cutoff), t.idleIn("opencode/log", o.days));
 }
 
 /** npm's `_npx` folder, where every `npx some-mcp-server` gets installed and then forgotten. */
@@ -132,7 +124,7 @@ export function npxCacheDir(o: Pick<ScanOptions, "home" | "env" | "platform">): 
 
 function scanNpx(o: ScanOptions, cutoff: number, items: Item[]) {
   const g = staleChildren(npxCacheDir(o), cutoff);
-  push(items, "npx", "cached MCP servers & one-off CLIs", g, `${g.paths.length} npx install(s) unused > ${o.days}d; npx re-downloads on demand`);
+  push(items, "npx", t.npxTitle(), g, t.npxDetail(g.paths.length, o.days));
 }
 
 export function scanCaches(o: ScanOptions): Item[] {

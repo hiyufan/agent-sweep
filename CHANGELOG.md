@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+- Chinese interface (简体中文). Picked from `LC_ALL` / `LANG` or the OS locale; override with `--lang en|zh` or `AGENT_SWEEP_LANG`.
+- Columns stay aligned with CJK text: widths are measured in terminal cells.
+
 ## 0.2.0
 
 - Published on npm as `agent-sweeper` (`npx agent-sweeper`); the installed command is available as both `agent-sweeper` and `agent-sweep`.

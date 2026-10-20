@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { exists, list, usage } from "../fsutil.js";
 import type { Item, ScanOptions } from "../types.js";
+import { t } from "../i18n.js";
 
 /** AI editors built on VS Code, plus VS Code itself (Copilot keeps its chats here). */
 const APPS = ["Cursor", "Windsurf", "Code"];
@@ -53,8 +54,8 @@ export function scanEditors(o: ScanOptions): Item[] {
       id: `cache:${name}:workspaces`,
       category: "cache",
       tool: name,
-      title: `storage of ${paths.length} deleted workspace(s)`,
-      detail: `${dir}: chats, indexes and state for folders that no longer exist`,
+      title: t.workspaces(paths.length),
+      detail: t.workspacesDetail(dir),
       bytes,
       mtime,
       action: { kind: "rm", paths },

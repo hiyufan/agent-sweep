@@ -10,6 +10,9 @@ import { scanEditors } from "../dist/scanners/editors.js";
 import { pathToFileURL } from "node:url";
 import { findOrphans, mcpName, parseEtime, parsePs } from "../dist/scanners/processes.js";
 import { inside, run } from "../dist/actions.js";
+import { clip, detectLang, fit, setLang, width } from "../dist/i18n.js";
+
+setLang("en");
 
 const DAY = 86_400_000;
 const now = Date.now();
@@ -175,5 +178,33 @@ test("finds Cursor / VS Code storage of deleted workspaces on each platform", ()
     assert.equal(items.length, 1, platform);
     assert.equal(items[0].tool, "cursor");
     assert.deepEqual(items[0].action.paths, [join(ws, "gone")]);
+  }
+});
+
+test("language follows the system locale, with an explicit override", () => {
+  assert.equal(detectLang({ LANG: "zh_CN.UTF-8" }), "zh");
+  assert.equal(detectLang({ LC_ALL: "zh_TW.UTF-8", LANG: "en_US.UTF-8" }), "zh");
+  assert.equal(detectLang({ LANG: "en_US.UTF-8" }), "en");
+  assert.equal(detectLang({ LANG: "zh_CN.UTF-8", AGENT_SWEEP_LANG: "en" }), "en");
+  assert.equal(detectLang({ AGENT_SWEEP_LANG: "zh" }), "zh");
+});
+
+test("Chinese text is measured and cut by terminal columns", () => {
+  assert.equal(width("缓存ab"), 6);
+  assert.equal(width(fit("孤儿进程", 7)), 7);
+  assert.equal(fit("孤儿进程", 7), "孤儿进 ");
+  assert.equal(width(clip("过期会话：/Users/dev/code/webapp", 12)), 12);
+});
+
+test("findings are reported in Chinese when asked", () => {
+  const home = mkdtempSync(join(tmpdir(), "sweep-"));
+  file(join(home, ".claude/debug/a.txt"), "x", 20);
+  setLang("zh");
+  try {
+    const [item] = scanCaches(opts(home));
+    assert.equal(item.title, "调试日志");
+    assert.equal(item.detail, "~/.claude/debug，闲置超过 14 天");
+  } finally {
+    setLang("en");
   }
 });

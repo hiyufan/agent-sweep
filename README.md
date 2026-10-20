@@ -55,6 +55,8 @@ Each tool ships, at best, a cleanup for its own folder. You probably use more th
 | 🖥️ **Cursor, Windsurf, VS Code** | `workspaceStorage` | The workspace folder no longer exists |
 | 📦 **npx cache** | `~/.npm/_npx` | Unused for `--days` (npx re-downloads on demand) |
 
+The interface speaks English and Chinese (简体中文), picked from your system locale; override with `--lang` or `AGENT_SWEEP_LANG`.
+
 Honors `CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `XDG_*`, `APPDATA` and `npm_config_cache`. Works on macOS, Linux and Windows (process scanning is macOS and Linux only).
 
 ## Safe by default
@@ -96,6 +98,7 @@ npx agent-sweeper --json | jq      # machine-readable findings
 | `--apply` | off | Really delete and kill (still confirms) |
 | `--list` | | Print findings and exit; never deletes |
 | `--json` | | Print findings as JSON and exit; never deletes |
+| `--lang <en\|zh>` | system | Interface language |
 
 ## FAQ
 
