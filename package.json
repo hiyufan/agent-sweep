@@ -1,0 +1,38 @@
+{
+  "name": "agent-sweep",
+  "version": "0.1.0",
+  "description": "npkill for AI coding agents: find and clean stale Claude Code / Codex / Gemini CLI sessions, orphaned git worktrees and leftover MCP server processes.",
+  "type": "module",
+  "bin": {
+    "agent-sweep": "dist/cli.js"
+  },
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "npm run build && node --test test/*.test.js",
+    "start": "node dist/cli.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "claude-code",
+    "codex",
+    "gemini-cli",
+    "mcp",
+    "cleanup",
+    "disk-space",
+    "worktree",
+    "npkill",
+    "cli",
+    "tui"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
