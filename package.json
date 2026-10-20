@@ -1,5 +1,5 @@
 {
-  "name": "agent-sweep",
+  "name": "agent-sweeper",
   "version": "0.2.0",
   "description": "npkill for AI coding agents: reclaim disk and RAM from stale Claude Code, Codex, Gemini CLI and Cursor sessions, orphaned git worktrees and zombie MCP servers.",
   "keywords": [
@@ -30,6 +30,7 @@
   },
   "type": "module",
   "bin": {
+    "agent-sweeper": "dist/cli.js",
     "agent-sweep": "dist/cli.js"
   },
   "files": [

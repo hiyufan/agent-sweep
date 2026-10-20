@@ -12,13 +12,13 @@ body:
   - type: textarea
     id: list
     attributes:
-      label: Output of `npx agent-sweep --list`
+      label: Output of `npx agent-sweeper --list`
       description: Remove anything private. This never deletes anything.
       render: text
   - type: input
     id: env
     attributes:
       label: OS, Node version, agent-sweep version
-      placeholder: macOS 15, Node 22, agent-sweep 0.2.0
+      placeholder: macOS 15, Node 22, agent-sweeper 0.2.0
     validations:
       required: true

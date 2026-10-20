@@ -96,7 +96,7 @@ svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewB
 <style>{"".join(css)}</style>
 <rect width="{W}" height="{H}" rx="10" fill="#1e1f29"/>
 <circle cx="22" cy="20" r="6" fill="#ff5f57"/><circle cx="42" cy="20" r="6" fill="#febc2e"/><circle cx="62" cy="20" r="6" fill="#28c840"/>
-<text x="{W / 2}" y="25" fill="#8b8d98" text-anchor="middle" font-size="13">npx agent-sweep</text>
+<text x="{W / 2}" y="25" fill="#8b8d98" text-anchor="middle" font-size="13">npx agent-sweeper</text>
 {"".join(groups)}
 </svg>'''
 os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)

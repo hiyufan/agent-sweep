@@ -3,10 +3,10 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/agent-sweep"><img src="https://img.shields.io/npm/v/agent-sweep?color=5af78e&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/agent-sweeper"><img src="https://img.shields.io/npm/v/agent-sweeper?color=5af78e&label=npm" alt="npm version"></a>
   <a href="https://github.com/hiyufan/agent-sweep/actions/workflows/ci.yml"><img src="https://github.com/hiyufan/agent-sweep/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/dependencies-0-57c7ff" alt="零依赖">
-  <img src="https://img.shields.io/node/v/agent-sweep?color=57c7ff" alt="node version">
+  <img src="https://img.shields.io/node/v/agent-sweeper?color=57c7ff" alt="node version">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/hiyufan/agent-sweep?color=a9abb8" alt="MIT license"></a>
 </p>
 
@@ -21,7 +21,7 @@ AI 编程工具用久了，会悄悄留下一堆东西：Claude Code、Codex、G
 **agent-sweep 一次扫描把这些全部找出来，列出每一项占多少空间，只清理你勾选的部分。**
 
 ```sh
-npx agent-sweep
+npx agent-sweeper
 ```
 
 <p align="center">
@@ -67,17 +67,17 @@ npx agent-sweep
 - **不碰正在用的会话。** 最近 1 小时内动过的东西一律跳过，`--days` 设成多少都一样。
 - **通过 git 删除，不绕过 git。** 闲置 worktree 用不带 `--force` 的 `git worktree remove` 删除，有未提交改动就删不掉，分支也会保留。
 - **给进程留退出时间。** 先发 `SIGTERM`，3 秒后还在才 `SIGKILL`。
-- **零运行时依赖**，`npx agent-sweep` 运行的只有这个仓库里的代码。
+- **零运行时依赖**，`npx agent-sweeper` 运行的只有这个仓库里的代码。
 
 ## 用法
 
 ```sh
-npx agent-sweep                  # 交互界面，dry-run
-npx agent-sweep --apply          # 交互界面，确认后真正清理
-npx agent-sweep --days 30        # 只看闲置超过一个月的
-npx agent-sweep --only process   # 只看僵尸 MCP 进程
-npx agent-sweep --list           # 打印结果后退出
-npx agent-sweep --json | jq      # 输出 JSON
+npx agent-sweeper                  # 交互界面，dry-run
+npx agent-sweeper --apply          # 交互界面，确认后真正清理
+npx agent-sweeper --days 30        # 只看闲置超过一个月的
+npx agent-sweeper --only process   # 只看僵尸 MCP 进程
+npx agent-sweeper --list           # 打印结果后退出
+npx agent-sweeper --json | jq      # 输出 JSON
 ```
 
 | 按键 | 作用 |

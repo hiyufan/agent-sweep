@@ -12,7 +12,7 @@ import type { Category, Item, ScanOptions } from "./types.js";
 
 const HELP = `agent-sweep: clean up after your AI coding agents
 
-Usage: npx agent-sweep [options]
+Usage: npx agent-sweeper [options]
 
 Finds stale Claude Code / Codex / Gemini CLI / opencode sessions and caches,
 Cursor / Windsurf / VS Code storage for deleted projects, forgotten npx

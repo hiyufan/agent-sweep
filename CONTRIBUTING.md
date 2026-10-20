@@ -21,4 +21,4 @@ Never add settings, credentials, instructions files (`CLAUDE.md`, `AGENTS.md`), 
 
 ## Code style
 
-TypeScript, no runtime dependencies. Keep `npx agent-sweep` fast to download and start.
+TypeScript, no runtime dependencies. Keep `npx agent-sweeper` fast to download and start.

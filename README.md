@@ -3,10 +3,10 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/agent-sweep"><img src="https://img.shields.io/npm/v/agent-sweep?color=5af78e&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/agent-sweeper"><img src="https://img.shields.io/npm/v/agent-sweeper?color=5af78e&label=npm" alt="npm version"></a>
   <a href="https://github.com/hiyufan/agent-sweep/actions/workflows/ci.yml"><img src="https://github.com/hiyufan/agent-sweep/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/dependencies-0-57c7ff" alt="zero dependencies">
-  <img src="https://img.shields.io/node/v/agent-sweep?color=57c7ff" alt="node version">
+  <img src="https://img.shields.io/node/v/agent-sweeper?color=57c7ff" alt="node version">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/hiyufan/agent-sweep?color=a9abb8" alt="MIT license"></a>
 </p>
 
@@ -21,7 +21,7 @@ Your AI coding agents leave things behind. Every Claude Code, Codex and Gemini C
 **agent-sweep finds all of it in one scan, shows you how much space each item takes, and cleans only what you select.**
 
 ```sh
-npx agent-sweep
+npx agent-sweeper
 ```
 
 <p align="center">
@@ -67,17 +67,17 @@ Deleting things in someone's home folder is serious, so agent-sweep is built to 
 - **Live sessions are left alone.** Anything touched in the last hour is skipped, whatever `--days` says.
 - **Git is asked, not bypassed.** Stale worktrees go through `git worktree remove` without `--force`, so uncommitted work blocks removal, and the branch is kept.
 - **Processes get a chance to exit.** `SIGTERM` first, `SIGKILL` only after 3 seconds.
-- **Zero runtime dependencies**, so `npx agent-sweep` runs the code in this repo and nothing else.
+- **Zero runtime dependencies**, so `npx agent-sweeper` runs the code in this repo and nothing else.
 
 ## Usage
 
 ```sh
-npx agent-sweep                  # interactive, dry-run
-npx agent-sweep --apply          # interactive, really cleans after you confirm
-npx agent-sweep --days 30        # only things idle for a month
-npx agent-sweep --only process   # just the zombie MCP servers
-npx agent-sweep --list           # print findings, then exit
-npx agent-sweep --json | jq      # machine-readable findings
+npx agent-sweeper                  # interactive, dry-run
+npx agent-sweeper --apply          # interactive, really cleans after you confirm
+npx agent-sweeper --days 30        # only things idle for a month
+npx agent-sweeper --only process   # just the zombie MCP servers
+npx agent-sweeper --list           # print findings, then exit
+npx agent-sweeper --json | jq      # machine-readable findings
 ```
 
 | Key | Action |

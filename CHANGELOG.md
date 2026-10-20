@@ -2,6 +2,7 @@
 
 ## 0.2.0
 
+- Published on npm as `agent-sweeper` (`npx agent-sweeper`); the installed command is available as both `agent-sweeper` and `agent-sweep`.
 - Cursor, Windsurf and VS Code: storage (chats, indexes, state DBs) for workspaces whose folder was deleted.
 - npx cache: `~/.npm/_npx` installs unused for `--days`, where MCP servers started with `npx` pile up.
 - opencode logs.
