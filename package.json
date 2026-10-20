@@ -1,36 +1,51 @@
 {
   "name": "agent-sweep",
-  "version": "0.1.0",
-  "description": "npkill for AI coding agents: find and clean stale Claude Code / Codex / Gemini CLI sessions, orphaned git worktrees and leftover MCP server processes.",
+  "version": "0.2.0",
+  "description": "npkill for AI coding agents: reclaim disk and RAM from stale Claude Code, Codex, Gemini CLI and Cursor sessions, orphaned git worktrees and zombie MCP servers.",
+  "keywords": [
+    "claude-code",
+    "codex",
+    "gemini-cli",
+    "cursor",
+    "windsurf",
+    "opencode",
+    "mcp",
+    "ai-agents",
+    "cleanup",
+    "disk-space",
+    "git-worktree",
+    "npkill",
+    "cli",
+    "tui"
+  ],
+  "author": "hiyufan",
+  "license": "MIT",
+  "homepage": "https://github.com/hiyufan/agent-sweep#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hiyufan/agent-sweep.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hiyufan/agent-sweep/issues"
+  },
   "type": "module",
   "bin": {
     "agent-sweep": "dist/cli.js"
   },
   "files": [
+    "dist",
     "README.md",
-    "dist"
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p .",
-    "test": "npm run build && node --test test/*.test.js",
-    "start": "node dist/cli.js"
+    "test": "npm run build && node --test test/sweep.test.js",
+    "start": "node dist/cli.js",
+    "prepublishOnly": "npm test"
   },
   "engines": {
     "node": ">=18"
   },
-  "keywords": [
-    "claude-code",
-    "codex",
-    "gemini-cli",
-    "mcp",
-    "cleanup",
-    "disk-space",
-    "worktree",
-    "npkill",
-    "cli",
-    "tui"
-  ],
-  "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0"

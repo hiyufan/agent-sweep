@@ -117,6 +117,24 @@ function scanGemini(o: ScanOptions, cutoff: number, items: Item[]) {
   push(items, "gemini", "project temp & chats", staleChildren(join(root, "tmp"), cutoff), `~/.gemini/tmp, idle > ${o.days}d`);
 }
 
+function scanOpencode(o: ScanOptions, cutoff: number, items: Item[]) {
+  const root = join(o.env.XDG_DATA_HOME || join(o.home, ".local", "share"), "opencode");
+  if (!isDir(root)) return;
+  push(items, "opencode", "logs", staleChildren(join(root, "log"), cutoff), `opencode/log, idle > ${o.days}d`);
+}
+
+/** npm's `_npx` folder, where every `npx some-mcp-server` gets installed and then forgotten. */
+export function npxCacheDir(o: Pick<ScanOptions, "home" | "env" | "platform">): string {
+  if (o.env.npm_config_cache) return join(o.env.npm_config_cache, "_npx");
+  if (o.platform === "win32") return join(o.env.LOCALAPPDATA || join(o.home, "AppData", "Local"), "npm-cache", "_npx");
+  return join(o.home, ".npm", "_npx");
+}
+
+function scanNpx(o: ScanOptions, cutoff: number, items: Item[]) {
+  const g = staleChildren(npxCacheDir(o), cutoff);
+  push(items, "npx", "cached MCP servers & one-off CLIs", g, `${g.paths.length} npx install(s) unused > ${o.days}d; npx re-downloads on demand`);
+}
+
 export function scanCaches(o: ScanOptions): Item[] {
   // Never touch anything used in the last hour, whatever --days says: it may be a live session.
   const cutoff = Math.min(o.now - o.days * 86_400_000, o.now - 3_600_000);
@@ -124,14 +142,18 @@ export function scanCaches(o: ScanOptions): Item[] {
   scanClaude(o, cutoff, items);
   scanCodex(o, cutoff, items);
   scanGemini(o, cutoff, items);
+  scanOpencode(o, cutoff, items);
+  scanNpx(o, cutoff, items);
   return items;
 }
 
 /** Roots that `rm` actions are allowed to touch. Anything else is refused at delete time. */
-export function cacheRoots(o: Pick<ScanOptions, "home" | "env">): string[] {
+export function cacheRoots(o: Pick<ScanOptions, "home" | "env" | "platform">): string[] {
   return [
     o.env.CLAUDE_CONFIG_DIR || join(o.home, ".claude"),
     o.env.CODEX_HOME || join(o.home, ".codex"),
     join(o.home, ".gemini"),
+    join(o.env.XDG_DATA_HOME || join(o.home, ".local", "share"), "opencode"),
+    npxCacheDir(o),
   ];
 }

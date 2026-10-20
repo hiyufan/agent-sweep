@@ -1,0 +1,18 @@
+name: Support another agent
+description: Ask agent-sweep to clean up after a tool it does not know yet
+labels: [new-agent]
+body:
+  - type: input
+    id: tool
+    attributes:
+      label: Tool
+      placeholder: e.g. Aider, Continue, Cline
+    validations:
+      required: true
+  - type: textarea
+    id: paths
+    attributes:
+      label: What it leaves behind
+      description: Folders, file patterns or processes, and how you know they are safe to remove.
+    validations:
+      required: true

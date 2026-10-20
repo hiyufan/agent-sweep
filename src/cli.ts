@@ -2,6 +2,7 @@
 import { homedir } from "node:os";
 import { readFileSync } from "node:fs";
 import { cacheRoots, scanCaches } from "./scanners/caches.js";
+import { scanEditors, workspaceStorageDirs } from "./scanners/editors.js";
 import { scanProcesses } from "./scanners/processes.js";
 import { scanWorktrees, worktreeRoots } from "./scanners/worktrees.js";
 import { describe } from "./actions.js";
@@ -13,9 +14,11 @@ const HELP = `agent-sweep: clean up after your AI coding agents
 
 Usage: npx agent-sweep [options]
 
-Finds stale Claude Code / Codex / Gemini CLI sessions and caches, orphaned
-git worktrees, and MCP server processes whose agent is gone. Opens an
-interactive list; nothing is deleted without --apply and a confirmation.
+Finds stale Claude Code / Codex / Gemini CLI / opencode sessions and caches,
+Cursor / Windsurf / VS Code storage for deleted projects, forgotten npx
+installs, orphaned git worktrees, and MCP server processes whose agent is
+gone. Opens an interactive list; nothing is deleted without --apply and a
+confirmation.
 
 Options:
   --days <n>       Treat things idle for n days as stale (default 14)
@@ -85,11 +88,15 @@ export function parseArgs(argv: string[]): Args {
 
 export function scanAll(o: ScanOptions, only: Set<Category>): Item[] {
   const items: Item[] = [];
-  if (only.has("cache")) items.push(...scanCaches(o));
+  if (only.has("cache")) items.push(...scanCaches(o), ...scanEditors(o));
   if (only.has("worktree")) items.push(...scanWorktrees(o));
   if (only.has("process")) items.push(...scanProcesses(o));
   const order: Category[] = ["process", "worktree", "cache"];
   return items.sort((x, y) => order.indexOf(x.category) - order.indexOf(y.category) || y.bytes - x.bytes);
+}
+
+export function allowedRoots(o: ScanOptions): string[] {
+  return [...cacheRoots(o), ...workspaceStorageDirs(o), ...worktreeRoots(o)];
 }
 
 function printList(items: Item[], now: number) {
@@ -114,7 +121,14 @@ async function main() {
     process.stderr.write(`agent-sweep: ${(e as Error).message}\n\n${HELP}`);
     process.exit(2);
   }
-  const o: ScanOptions = { home: homedir(), days: args.days, cwd: process.cwd(), now: Date.now(), env: process.env };
+  const o: ScanOptions = {
+    home: homedir(),
+    days: args.days,
+    cwd: process.cwd(),
+    now: Date.now(),
+    env: process.env,
+    platform: process.platform,
+  };
   const interactiveMode = !args.list && !args.json && process.stdin.isTTY && process.stdout.isTTY;
   if (interactiveMode) process.stderr.write("Scanning...\n");
   const items = scanAll(o, args.only);
@@ -131,7 +145,14 @@ async function main() {
     console.log("Nothing to sweep. Your agents are tidy.");
     return;
   }
-  await interactive(items, { apply: args.apply, roots: [...cacheRoots(o), ...worktreeRoots(o)], now: o.now });
+  const sum = await interactive(items, { apply: args.apply, roots: allowedRoots(o), now: o.now });
+  if (sum.done + sum.failed === 0) return;
+  const failed = sum.failed ? `, ${sum.failed} failed` : "";
+  console.log(
+    args.apply
+      ? `agent-sweep cleaned ${sum.done} item(s) and freed ${formatBytes(sum.bytes)}${failed}.`
+      : `Dry-run: ${sum.done} item(s), ${formatBytes(sum.bytes)} would be freed${failed}. Run again with --apply to clean for real.`,
+  );
 }
 
 main().catch((e) => {

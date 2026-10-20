@@ -26,4 +26,5 @@ export interface ScanOptions {
   cwd: string;
   now: number;
   env: NodeJS.ProcessEnv;
+  platform: NodeJS.Platform;
 }

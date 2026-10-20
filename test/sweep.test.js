@@ -6,7 +6,9 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { scanCaches } from "../dist/scanners/caches.js";
 import { scanWorktrees } from "../dist/scanners/worktrees.js";
-import { findOrphans, parseEtime, parsePs } from "../dist/scanners/processes.js";
+import { scanEditors } from "../dist/scanners/editors.js";
+import { pathToFileURL } from "node:url";
+import { findOrphans, mcpName, parseEtime, parsePs } from "../dist/scanners/processes.js";
 import { inside, run } from "../dist/actions.js";
 
 const DAY = 86_400_000;
@@ -25,7 +27,7 @@ function age(path, ageDays) {
 }
 
 function opts(home, extra = {}) {
-  return { home, days: 14, cwd: home, now, env: {}, ...extra };
+  return { home, days: 14, cwd: home, now, env: {}, platform: "linux", ...extra };
 }
 
 test("finds stale Claude sessions but keeps fresh ones, memory and settings", () => {
@@ -116,6 +118,9 @@ test("process tree: MCP servers without an agent ancestor are orphans", () => {
   assert.deepEqual(orphans, [200]);
   assert.equal(parseEtime("2-03:04:05"), 2 * 86400 + 3 * 3600 + 4 * 60 + 5);
   assert.equal(parseEtime("04:59"), 299);
+  assert.equal(mcpName("node /c/@modelcontextprotocol/server-github/dist/index.js"), "@modelcontextprotocol/server-github");
+  assert.equal(mcpName("node /n/_npx/1/node_modules/@playwright/mcp/cli.js"), "@playwright/mcp");
+  assert.equal(mcpName("uv run mcp-server-fetch"), "mcp-server-fetch");
 });
 
 test("actions: dry-run touches nothing, apply deletes, outside paths are refused", async () => {
@@ -141,4 +146,34 @@ test("actions: dry-run touches nothing, apply deletes, outside paths are refused
   assert.ok(inside("/a/b", "/a/b/c"));
   assert.ok(!inside("/a/b", "/a/b/../c"));
   assert.ok(!inside("/a/b", "/a/bc"));
+});
+
+test("finds old npx installs but keeps recent ones", () => {
+  const home = mkdtempSync(join(tmpdir(), "sweep-"));
+  file(join(home, ".npm/_npx/aaa/node_modules/x/index.js"), "x".repeat(500), 60);
+  for (const p of ["node_modules/x", "node_modules", ""]) age(join(home, ".npm/_npx/aaa", p), 60);
+  file(join(home, ".npm/_npx/bbb/package.json"), "{}", 2);
+  const npx = scanCaches(opts(home)).find((i) => i.tool === "npx");
+  assert.deepEqual(npx.action.paths, [join(home, ".npm/_npx/aaa")]);
+});
+
+test("finds Cursor / VS Code storage of deleted workspaces on each platform", () => {
+  for (const [platform, base] of [
+    ["linux", ".config"],
+    ["darwin", "Library/Application Support"],
+  ]) {
+    const home = mkdtempSync(join(tmpdir(), "sweep-"));
+    const ws = join(home, base, "Cursor/User/workspaceStorage");
+    const live = join(home, "live-project");
+    mkdirSync(live);
+    file(join(ws, "gone/workspace.json"), JSON.stringify({ folder: pathToFileURL(join(home, "deleted")).href }), 10);
+    file(join(ws, "gone/state.vscdb"), "x".repeat(4096), 10);
+    age(join(ws, "gone"), 10);
+    file(join(ws, "here/workspace.json"), JSON.stringify({ folder: pathToFileURL(live).href }), 10);
+    file(join(ws, "remote/workspace.json"), JSON.stringify({ folder: "vscode-remote://ssh-remote+box/srv" }), 10);
+    const items = scanEditors(opts(home, { platform }));
+    assert.equal(items.length, 1, platform);
+    assert.equal(items[0].tool, "cursor");
+    assert.deepEqual(items[0].action.paths, [join(ws, "gone")]);
+  }
 });

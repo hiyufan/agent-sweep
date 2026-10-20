@@ -63,11 +63,20 @@ export function findOrphans(procs: Proc[], uid: number, selfPid: number): Proc[]
   return orphans.filter((p) => !ids.has(p.ppid));
 }
 
+/** A readable name for an MCP server from its command line, e.g. "server-github" or "@playwright/mcp". */
+export function mcpName(args: string): string {
+  const pkg = args.match(/(@[\w.-]+\/[\w.-]*mcp[\w.-]*|@modelcontextprotocol\/[\w.-]+|[\w.-]*mcp[\w.-]*)/i);
+  if (pkg) return pkg[1];
+  const script = args.split(/\s+/).find((t) => /\.(c|m)?js$|\.py$/.test(t));
+  return script ? script.split(/[\\/]/).pop()! : args.split(/\s+/)[0];
+}
+
 export function scanProcesses(o: ScanOptions): Item[] {
   if (process.platform === "win32" || typeof process.getuid !== "function") return [];
   let out: string;
   try {
-    out = execFileSync("ps", ["-A", "-o", "pid=,ppid=,uid=,rss=,etime=,args="], {
+    // -ww: never cut command lines to the terminal width ($COLUMNS), or long npx paths lose their "mcp".
+    out = execFileSync("ps", ["-ww", "-A", "-o", "pid=,ppid=,uid=,rss=,etime=,args="], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
       maxBuffer: 64 * 1024 * 1024,
@@ -79,7 +88,7 @@ export function scanProcesses(o: ScanOptions): Item[] {
     id: `process:${p.pid}`,
     category: "process" as const,
     tool: "mcp",
-    title: `orphaned MCP server (pid ${p.pid})`,
+    title: `orphaned ${mcpName(p.args)} (pid ${p.pid})`,
     detail: p.args.length > 120 ? p.args.slice(0, 117) + "..." : p.args,
     bytes: p.rssKb * 1024,
     mtime: o.now - p.elapsedSec * 1000,

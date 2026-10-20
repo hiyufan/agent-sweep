@@ -1,0 +1,24 @@
+name: Bug report
+description: Something was found, missed, or cleaned wrongly
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did agent-sweep show or do, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: list
+    attributes:
+      label: Output of `npx agent-sweep --list`
+      description: Remove anything private. This never deletes anything.
+      render: text
+  - type: input
+    id: env
+    attributes:
+      label: OS, Node version, agent-sweep version
+      placeholder: macOS 15, Node 22, agent-sweep 0.2.0
+    validations:
+      required: true
