@@ -28,8 +28,6 @@ npx agent-sweeper
   <img src="assets/demo.zh-CN.svg" alt="agent-sweep 演示：扫描、勾选、dry-run 清理 4.5 GB" width="100%">
 </p>
 
-<sub>演示用的是一个示例 home 目录，由 [`scripts/record-demo.py`](scripts/record-demo.py) 从真实 CLI 录制。</sub>
-
 ## 为什么需要它
 
 这些都是长期存在、至今仍开着的问题：

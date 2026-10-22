@@ -28,8 +28,6 @@ npx agent-sweeper
   <img src="assets/demo.svg" alt="agent-sweep demo: scanning, selecting and dry-run cleaning 4.5 GB" width="100%">
 </p>
 
-<sub>The demo runs against a sample home folder; [`scripts/record-demo.py`](scripts/record-demo.py) records it from the real CLI.</sub>
-
 ## Why
 
 These are open, long-running complaints, not hypotheticals:
